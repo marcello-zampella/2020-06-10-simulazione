@@ -5,8 +5,12 @@
 package it.polito.tdp.imdb;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.imdb.model.Actor;
 import it.polito.tdp.imdb.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -35,10 +39,10 @@ public class FXMLController {
     private Button btnSimulazione; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxGenere"
-    private ComboBox<?> boxGenere; // Value injected by FXMLLoader
+    private ComboBox<String> boxGenere; // Value injected by FXMLLoader
 
     @FXML // fx:id="boxAttore"
-    private ComboBox<?> boxAttore; // Value injected by FXMLLoader
+    private ComboBox<Actor> boxAttore; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtGiorni"
     private TextField txtGiorni; // Value injected by FXMLLoader
@@ -48,18 +52,58 @@ public class FXMLController {
 
     @FXML
     void doAttoriSimili(ActionEvent event) {
+    	Actor s=boxAttore.getValue();
+    	if(s==null) {
+    		this.txtResult.appendText("scegli");
+    		return;
+    	}
+    	List<Actor>lista=this.model.cercaAttoriVicini(s);
+    	Collections.sort(lista, new ComparatoreCognomi());
+    	for(Actor a:lista) {
+    		this.txtResult.appendText(a+"\n");
+    	}
 
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
+    	String s=boxGenere.getValue();
+    	if(s==null) {
+    		this.txtResult.appendText("scegli");
+    		return;
+    	}
+    	
+    	ArrayList<Actor> lista=new ArrayList<Actor>(model.creaGrafo(s));
+    	Collections.sort(lista, new ComparatoreCognomi());
+    	this.boxAttore.getItems().addAll(lista);
 
     }
 
     @FXML
     void doSimulazione(ActionEvent event) {
+    	String s=this.txtGiorni.getText();
+    	if(!this.isNumeric(s)) {
+    		this.txtResult.setText("INSERISCI UN NUMERO INTERO");
+    		return;
+    	}
+    	
+    	model.simula(Integer.parseInt(s));
+    	for(Actor a:model.getInseriti()) {
+    		this.txtResult.appendText(a+"\n");
+    	}
+    	this.txtResult.appendText(""+model.getGiorniDiPausa()+"\n");
 
     }
+    
+    public static boolean isNumeric(String str) { 
+  	  try {  
+  	    Integer.parseInt(str);  
+  	    return true;
+  	  } catch(NumberFormatException e){  
+  	    return false;  
+  	  }  
+  	}
+  
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
     void initialize() {
@@ -75,5 +119,6 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	this.boxGenere.getItems().addAll(this.model.getAllGeneri());
     }
 }
